@@ -42,7 +42,7 @@ from bcbio.google import bc_metrics
 from bcbio.solexa.flowcell import get_flowcell_info 
 import read_illumina_summary_xml as summ
 from bcbio.pipeline.config_loader import load_config
-from bcbio.scilifelab.google.uppnex_id import get_project_uppnex_id
+from bcbio.scilifelab.google.project_metadata import ProjectMetaData
 
 TEMPLATE="""\
 Delivery report for ${project_id}
@@ -241,6 +241,21 @@ def main(flowcell_id, archive_dir, analysis_dir, config_file):
 
 
 def generate_report(proj_conf):
+    
+    #######
+    ### Metadata fetched from the 'Genomics project list' on Google Docs
+    ###
+    proj_data = ProjectMetaData(proj_conf['id'], proj_conf['config'])
+    uppnex_proj = proj_data.uppnex_id
+    project_id = proj_data.project_id
+    queue_date = proj_data.queue_date
+    no_samples = proj_data.no_samples
+    lanes_plates = proj_data.lanes_plates
+    min_reads_per_sample = proj_data.min_reads_per_sample
+    customer_reference = proj_data.customer_reference
+    application = proj_data.application
+    no_finished_samples = proj_data.no_finished_samples
+    
     d = { 
         'project_id' : proj_conf['id'],
         'latex_opt' : "",
@@ -261,8 +276,7 @@ def generate_report(proj_conf):
 
     ## General info table
     tab = Texttable()
-    uppnex_proj = get_project_uppnex_id(proj_conf['id'], proj_conf['config'])
-    if uppnex_proj[0:4] != 'b201':
+    if not uppnex_proj or len(uppnex_proj) < 4 or uppnex_proj[0:4] != 'b201':
         uppnex_proj = "b201YXXX"
     
     run_name_comp = proj_conf['flowcell'].split('_')
